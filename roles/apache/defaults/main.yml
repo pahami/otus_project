@@ -1,0 +1,17 @@
+---
+apache_port: 80
+srv_name: sitepvm.ru
+srv_root: /var/www/glpi
+ondrej_sourcelist_path: "/etc/apt/sources.list.d/ppa_ondrej_php_{{ansible_distribution_release}}.list"
+apache_pkgs:
+  - php8.3
+  - php8.3-cli
+  - php8.3-xml
+  - php8.3-mysqli
+  - php8.3-gd
+  - apache2
+  - php8.3-intl
+  - php8.3-curl
+  - php8.3-bz2
+  - php8.3-mbstring
+...

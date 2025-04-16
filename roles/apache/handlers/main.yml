@@ -1,0 +1,12 @@
+---
+- name: Restart Apache
+  ansible.builtin.systemd:
+    service: apache2
+    state: restarted
+
+- name: Start Apache
+  ansible.builtin.systemd:
+    service: apache2
+    state: started
+
+...

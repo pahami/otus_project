@@ -1,0 +1,90 @@
+---
+- name: Check if GLPI is already installed
+  stat:
+    path: "{{ glpi_install_path }}/glpi"
+  register: glpiinstalled
+
+- block:
+
+    - name: Check if GLPI Backup already exists
+      stat:
+        path: "{{ glpi_install_path }}/glpi-bck"
+      register: glpibackup
+
+    - name: Remove Old GLPI Backup folder before update
+      ansible.builtin.file:
+        path: "{{ glpi_install_path }}/glpi-bck"
+        state: absent
+      when: glpibackup
+
+    - name: BackUp GLPI Folder
+      ansible.builtin.copy:
+        remote_src: true
+        src: "{{ glpi_install_path }}/glpi/"
+        dest: "{{ glpi_install_path }}/glpi-bck"
+
+    - name: Remove GLPI folder before update
+      ansible.builtin.file:
+        path: "{{ glpi_install_path }}/glpi"
+        state: absent
+
+  when: glpi_update and glpiinstalled
+
+- name: Download and extract GLPI
+  unarchive:
+    src: "{{ glpi_download_url }}"
+    remote_src: true
+    dest: "{{ glpi_install_path }}"
+    owner: "{{ glpi_web_owner }}"
+    group: "{{ glpi_web_group }}"
+    validate_certs: false
+  when: not glpiinstalled.stat.exists or glpi_update
+
+- block:
+
+    - name: Copy files directory from backup to new version
+      ansible.builtin.copy:
+        remote_src: true
+        src: "{{ glpi_install_path }}/glpi-bck/files/"
+        dest: "{{ glpi_install_path }}/glpi/files"
+
+    - name: Copy config directory from backup to new version
+      ansible.builtin.copy:
+        remote_src: true
+        src: "{{ glpi_install_path }}/glpi-bck/config/"
+        dest: "{{ glpi_install_path }}/glpi/config"
+
+    - name: Automatic update
+      command: "php bin/console db:update --no-telemetry"
+      args:
+        chdir: "{{ glpi_install_path }}/glpi"
+      notify:
+        - Remove install.php
+        - Add htaccess
+
+  when: glpi_update and glpiinstalled
+
+- name: Automatic installation
+  command: "php bin/console -n db:install -H {{ glpi_db_host }} -P {{ glpi_db_port }} -d {{ glpi_db_name }} -u {{ glpi_db_user }} -p {{ glpi_db_password }}"
+  args:
+    chdir: "{{ glpi_install_path }}/glpi"
+  when: ( not glpiinstalled.stat.exists ) and glpi_auto_install
+  notify:
+    - Remove install.php
+    - Add htaccess
+
+- name: Set permisions to files directory
+  file:
+    path: "{{ glpi_install_path }}/glpi/files"
+    recurse: true
+    owner: "{{ glpi_web_owner }}"
+    group: "{{ glpi_web_group }}"
+  when: not glpiinstalled.stat.exists or glpi_update
+
+- name: Set permisions to config directory
+  file:
+    path: "{{ glpi_install_path }}/glpi/config"
+    recurse: true
+    owner: "{{ glpi_web_owner }}"
+    group: "{{ glpi_web_group }}"
+  when: not glpiinstalled.stat.exists or glpi_update

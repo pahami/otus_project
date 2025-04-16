@@ -1,0 +1,107 @@
+---
+- name: Include custom MySQL configuration
+  template:
+    src: mysqld.cnf.j2
+    dest: /etc/mysql/mysql.conf.d/mysqld.cnf
+  register: custom_config_result
+- name: Restart MySQL service
+  service:
+    name: mysql
+    state: restarted
+  when: custom_config_result.changed
+- name: Check variables on slave
+  debug:
+    msg: "MASTER_LOG_FILE: {{ hostvars[mysql_master_name]['mysql_master_facts']['stdout'].split('\n')[0].split('=')[1] }}, MASTER_LOG_POS: {{ hostvars[mysql_master_name]['mysql_master_facts']['stdout'].split('\n')[1].split('=')[1] }}"
+  when: "'db' in group_names"
+
+- block:
+    - name: Stop Replica if already running
+      mysql_replication:
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        mode: "stopreplica"
+    - name: Reset MySQL slave
+      mysql_query:
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        query: "RESET SLAVE;"
+    - name: Split stdout into separate lines
+      set_fact:
+        mysql_master_output: "{{ hostvars[mysql_master_name]['mysql_master_facts']['stdout'].split('\n') }}"
+
+    - name: Extract MASTER_LOG_FILE from first line
+      set_fact:
+        master_log_file: "{{ mysql_master_output[0].split('=')[1] }}"
+
+    - name: Extract MASTER_LOG_POS from second line
+      set_fact:
+        master_log_pos: "{{ mysql_master_output[1].split('=')[1] }}"
+
+    # Опционально: Отладка извлечённых значений
+    - name: Debug extracted values
+      debug:
+        msg: "MASTER_LOG_FILE: {{ master_log_file }}, MASTER_LOG_POS: {{ master_log_pos }}"
+
+    - name: Set up Replication on host2
+      command: >
+        mysql -u root -p{{ mysql_root_password }}
+              -e "CHANGE MASTER TO MASTER_HOST='{{ mysql_master_host }}', MASTER_USER='{{ mysql_replication_user }}', MASTER_PASSWORD='{{ mysql_replication_password }}', MASTER_LOG_FILE='{{ master_log_file }}', MASTER_LOG_POS={{ master_log_pos }}; START SLAVE;"
+      when: "'db' in group_names"
+
+
+
+#    - name: Stop Replica if already running
+#      mysql_replication:
+#        login_user: root
+#        login_password: "{{ mysql_root_password }}"
+#        mode: "stopreplica"
+#
+#    - name: Set up Replication on host2
+#      command: >
+#        mysql -u root -p{{ mysql_root_password }}
+#              -e "CHANGE MASTER TO MASTER_HOST='{{ hostvars[mysql_master_name]['ansible_default_ipv4']['address'] }}', MASTER_USER='{{ mysql_replication_user }}', MASTER_PASSWORD='{{ mysql_replication_password }}', MASTER_LOG_FILE='{{ hostvars[mysql_master_name]['mysql_master_facts']['stdout'].split('\n')[0].split('=')[1] }}', MASTER_LOG_POS={{ hostvars[mysql_master_name]['mysql_master_facts']['stdout'].split('\n')[1].split('=')[1] }}; START SLAVE;"
+#      when: "'db' in group_names"
+
+
+
+
+#    - name: Set up Replication on host2
+#      command: >
+#        mysql -u root -p{{ mysql_root_password }}
+#              -e "CHANGE MASTER TO MASTER_HOST='{{ hostvars[mysql_master_name]['ansible_default_ipv4']['address'] }}', MASTER_USER='{{ mysql_replication_user }}', MASTER_PASSWORD='{{ mysql_replication_password }}', MASTER_LOG_FILE='{{ hostvars[mysql_master_name]['mysql_master_facts']['stdout'].split('=')[1] }}', MASTER_LOG_POS={{ hostvars[mysql_master_name]['mysql_master_facts']['stdout'].split('=')[1] }}; START SLAVE;"
+#      when: "'db' in group_names"
+
+
+#    - name: Change master to set up replication
+#      mysql_replication:
+#        login_user: root
+#        login_password: "{{ mysql_root_password }}"
+#        mode: "changeprimary"
+#        master_host: "{{ mysql_master_host }}"
+#        master_user: "{{ mysql_replication_user }}"
+#        master_password: "{{ mysql_replication_password }}"
+#        master_port: "{{ mysql_master_port }}"
+#        master_log_file: "{{ mysql_master_status.File }}"
+#        master_log_pos: "{{ mysql_master_status.Position }}"
+#      when: mysql_master_status is defined
+ #   - name: Stop MySQL slave
+ #     mysql_query:
+ #       login_user: root
+ #       login_password: "{{ mysql_root_password }}"
+ #       query: "STOP SLAVE;"
+ #   - name: Reset MySQL slave
+ #     mysql_query:
+ #       login_user: root
+ #       login_password: "{{ mysql_root_password }}"
+ #       query: "RESET SLAVE;"
+    - name: Start MySQL slave
+      mysql_query:
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        query: "START SLAVE;"
+    - name: Start Replica
+      mysql_replication:
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        mode: "startreplica"
+...

@@ -1,0 +1,112 @@
+---
+- name: install mysql 
+  apt: 
+    name: 
+      - mysql-server
+      - pip
+      - python3-pip
+    update_cache: yes
+    cache_valid_time: 3600
+    state: present
+- name: use "mysql_secure_installation" for Fresh MySQL Installation
+  mysql_secure_installation:
+    login_password: ''
+    new_password: 'password22'
+    user: root
+    login_host: localhost
+    hosts: ['localhost', '127.0.0.1', '::1']
+    change_root_password: true
+    remove_anonymous_user: true
+    disallow_root_login_remotely: true
+    remove_test_db: true
+
+#- name: Make sure pymysql is present
+#  become: true # needed if the other tasks are not played as root
+#  pip:
+#    name: pymysql
+#    state: present
+##- name: Sets the root password 
+##  mysql_user:
+#    login_user: root
+#    login_password: ''
+#    user: root
+#    password: "{{ mysql_root_password }}" 
+  #no_log: yes
+
+#- name: start up the mysql service
+#  shell: "service mysql start"
+#- name: ensure mysql is enabled to run on startup
+#  service:
+#    name: mysql
+#    state: started
+#    enabled: true
+#- name: update mysql root password for all root accounts
+#  mysql_user:
+#    name: root
+#    password: "{{ mysql_root_password }}"
+#    login_user: root
+#    login_password: "{{ mysql_root_password }}"
+#    check_implicit_admin: yes
+#    priv: "*.*:ALL,GRANT" 
+#  notify:
+#    - restart mysql
+#- name: create a new database
+#  mysql_db:
+#    name: testdb
+#    state: present
+#    login_user: root
+#    login_password: "{{ mysql_root_password }}"
+#- name: add sample data to database
+#  copy:
+#    src: dump.sql
+#    dest: /tmp/dump.sql
+#- name: insert sample data into database
+#  mysql_db:
+#    name: testdb
+#    state: import
+#    target: /tmp/dump.sql
+#    login_user: root
+#    login_password: "{{ mysql_root_password }}"
+
+- name: Create `/root/.my.cnf`  with root password credentials
+  template:
+    src:  my.cnf.j2
+    dest: /root/my.cnf
+    owner: root
+    mode: 0600
+- name: Delete default mysqld.cnf
+  ansible.builtin.file:
+    path: /usr/share/nginx/html/index.html
+    state: absent
+- name: Create mysqld.cnf
+  template:
+    src:  mysqld.cnf.j2
+    dest: /etc/mysql/mysql.conf.d/mysqld.cnf
+    owner: mysql
+    mode: 0644
+  notify: restart mysql
+
+- name: Create a new database
+  mysql_db: 
+    name: glpi
+    state: present
+    collation: utf8_general_ci
+#    login_user: root
+#    login_password: "{{ mysql_root_password }}"
+- name: Create a database user
+  mysql_user: 
+    state: present
+#    login_user: root
+#    login_password: "{{ mysql_root_password }}"
+    name: glpi
+    password: "{{ glpi_pass }}"
+    priv:
+      'glpi.*': 'ALL,GRANT' 
+- name: create replicator user
+  mysql_user:
+    name: repl
+    password: "{{ repl_pass }}"
+    priv: "*.*:REPLICATION SLAVE"
+    state: present
+  notify: restart mysql     
+...

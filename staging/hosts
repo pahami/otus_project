@@ -1,0 +1,12 @@
+[nginx]
+Otussrv0 ansible_host=192.168.50.10 ansible_private_key_file=.vagrant/machines/Otussrv0/virtualbox/private_key
+[apache]
+Otussrv1 ansible_host=192.168.50.11 ansible_port=22 ansible_private_key_file=.vagrant/machines/Otussrv1/virtualbox/private_key
+Otussrv2 ansible_host=192.168.50.12 ansible_port=22 ansible_private_key_file=.vagrant/machines/Otussrv2/virtualbox/private_key
+[db]
+Otussrv3 ansible_host=192.168.50.13 ansible_port=22 ansible_private_key_file=.vagrant/machines/Otussrv3/virtualbox/private_key
+Otussrv4 ansible_host=192.168.50.14 ansible_port=22 ansible_private_key_file=.vagrant/machines/Otussrv4/virtualbox/private_key
+[monitoring]
+Otussrv5 ansible_host=192.168.50.15 ansible_port=22 ansible_private_key_file=.vagrant/machines/Otussrv5/virtualbox/private_key
+[logs]
+Otussrv6 ansible_host=192.168.50.16 ansible_port=22 ansible_private_key_file=.vagrant/machines/Otussrv6/virtualbox/private_key

@@ -1,0 +1,16 @@
+---
+nginx:
+  http:
+    port: 443
+nginx_listen_port: 443
+
+glpi1:
+  name: Otussrv1
+  ip: 192.168.50.11
+  port: 80
+glpi2:
+  name: Otussrv2
+  ip: 192.168.50.12
+  port: 80
+
+...

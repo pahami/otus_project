@@ -1,0 +1,74 @@
+---
+- name: Check if ondrej/php PPA is already present
+  stat:
+    path: "{{ ondrej_sourcelist_path }}"
+  register: ondrej_sourcelist_status
+
+- name: Add ondrej/php PPA
+  apt_repository:
+    repo: 'ppa:ondrej/php'
+    state: 'present'
+    update_cache: yes
+  when: ondrej_sourcelist_status.stat.exists == False
+
+- name: install apache2
+  ansible.builtin.apt:
+    pkg: "{{ apache_pkgs }}"
+    state: latest
+  notify: 
+    - Start Apache
+
+#- name: enable mod_rewrite
+#  apache2_module:
+#    name: rewrite
+#    state: present
+#  notify:
+#    - Restart Apache
+
+#- name: Create folderfor ssl certificate
+#  ansible.builtin.file:
+#    path: /etc/nginx/ssl
+#    state: directory
+#
+#- name: Copy ssl certificates
+#  ansible.builtin.copy:
+#    src: "{{ item }}"
+#    dest: "/etc/nginx/ssl/{{ item }}"
+#  loop:
+#    - glpi.crt
+#    - glpi.key
+#    
+- name: Delete default Apache config
+  ansible.builtin.file:
+    path: /etc/apache2/sites-available/default-ssl.conf
+    state: absent
+- name: Delete default Apache config
+  ansible.builtin.file:
+    path: /etc/apache2/sites-available/000-default.conf 
+    state: absent
+   
+- name: Create Apache config file from template
+  ansible.builtin.template:
+    src: sitepvm.conf.j2
+    dest: /etc/apache2/sites-available/sitepvm.conf
+
+- name: a2ensite sitepvm
+  command: a2ensite sitepvm.conf
+  notify: Restart Apache
+#- name: Enable new site
+#  shell: /usr/sbin/a2ensite {{ http_conf }}
+#  notify: 
+#  - Reload Apache
+
+#- name: Delete default nginx config
+#  ansible.builtin.file:
+#    path: /usr/share/nginx/html/index.html
+#    state: absent
+#
+#- name: Create new Nginx web page
+#  ansible.builtin.template:
+#    src: index.html.j2
+#    dest: "/usr/share/nginx/html/index.html"
+#    backup: true
+#  notify: Restart nginx
+...

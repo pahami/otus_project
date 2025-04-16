@@ -1,0 +1,57 @@
+#- name: Setup ALL
+#  hosts: ALL
+#  gather_facts: true
+#  become: true
+#  roles:
+#    - role: common
+#    - role: zabbix-agent
+
+
+
+#- name: Setup Nginx
+#  hosts: nginx
+#  gather_facts: true
+#  become: true
+#  roles:
+#  #  - role: common
+#    - role: nginx
+#    
+#
+#- name: Setup Apache
+#  hosts: apache
+#  gather_facts: true
+#  become: true
+#  roles:
+#    - role: common
+#    - role: glpi
+#    - role: apache
+
+- name: Install MySQL in Master and Slave
+  hosts: db
+  gather_facts: true
+  roles:
+    - role: network
+    - role: mysql_common
+
+- name: Setup MySQL Master 
+  hosts: Otussrv3
+  gather_facts: true
+  become: yes
+  roles:
+    - mysql_master
+
+
+- name: Setup MySQL Slave 
+  hosts: Otussrv4
+  gather_facts: true
+  become: yes
+  roles:
+    - mysql_slave
+
+#- name: Setup zabbix-server
+#  hosts: zabbix
+#  gather_facts: true
+#  become: true
+#  roles:
+#    - role: common
+#    - role: zabbix-server

@@ -1,0 +1,9 @@
+---
+zabbix_repo: "/home/vagrant/"
+zabbix_pkgs:
+  - zabbix-server-mysql
+  - zabbix-frontend-php
+  - zabbix-apache-conf
+  - zabbix-sql-scripts
+  - zabbix-agent
+...

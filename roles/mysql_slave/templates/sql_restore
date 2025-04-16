@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Mysql backup script
+
+PATH=$PATH:/usr/local/bin
+DIST='/mnt/backup/mysql'
+DIR=`date +"%Y-%m-%d"`
+s='glpi'
+#gunzip < DIST/DIR/glpi.sql.gz | mysql -u root -p P@vel-240124!! glpi
+
+mysql $s < $DIST/$DIR/$s/$s.sql

@@ -1,0 +1,77 @@
+---
+- name: Include custom MySQL configuration
+  template:
+    src: mysqld.cnf.j2
+    dest: /etc/mysql/mysql.conf.d/mysqld.cnf
+  changed_when: false
+  notify: Restart MySQL service
+- block:
+    - name: Create a glpi database
+      mysql_db: 
+        name: glpi
+        state: present
+        collation: utf8_general_ci
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+    - name: Create glpi user
+      mysql_user:
+        name: glpi
+        password: "{{ glpi_pass }}"
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        host: "%"
+        priv: 
+          'glpi.*': 'ALL,GRANT'
+        state: present
+- block:
+    - name: Create replication user for master
+      mysql_user:
+        name: "{{ mysql_replication_user }}"
+        password: "{{ mysql_replication_password }}"
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        host: "%"
+        priv: "*.*:REPLICATION SLAVE"
+        state: present
+    - name: Gather MySQL Master Status
+      shell: |
+        mysql -u root -p{{ mysql_root_password }} -e 'SHOW MASTER STATUS\G' | awk '/File/ {print "master_log_file="$2} /Position/ {print "master_log_pos="$2}'
+      register: mysql_master_facts
+      delegate_to: "{{ inventory_hostname }}"
+    #  become_user: mysql
+      when: "'db' in group_names"
+
+    # Опционально: Отладка вывода
+    - name: Debug output of mysql_master_facts
+      debug:
+        var: mysql_master_facts.stdout
+      when: "'mysql_master' in group_names"
+
+
+
+
+#    - name: Gather MySQL Master Status on host1
+#      shell: |
+#        mysql -u root -p{{ mysql_root_password }} -e 'SHOW MASTER STATUS\G' | awk '/File/ {print "master_log_file="$2} /Position/ {print "master_log_pos="$2}'
+#      register: mysql_master_facts
+#      delegate_to: "{{ inventory_hostname }}"
+##      become_user: mysql
+#      when: "'db' in group_names"        
+#    - name: Fetch MySQL master status
+#      mysql_replication:
+#        login_user: root
+#        login_password: "{{ mysql_root_password }}"
+#        mode: "getprimary"
+#      register: mysql_master_status
+#      delegate_to: "{{ inventory_hostname }}"
+#      when: "'db' in group_names"
+    - name: Log MySQL master facts
+      debug:
+        var: mysql_master_facts
+#      when: mysql_master_status is defined
+#    - name: Сохраняем переменную для использования в других ролях
+#      set_fact:
+#        mysql_master_status_global: "{{ mysql_master_status }}"
+#    - include_role:
+#        name: mysql_slave
+...

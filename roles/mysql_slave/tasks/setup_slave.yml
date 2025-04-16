@@ -1,0 +1,66 @@
+---
+- name: Include custom MySQL configuration
+  template:
+    src: mysqld.cnf.j2
+    dest: /etc/mysql/mysql.conf.d/mysqld.cnf
+  register: custom_config_result
+- name: Restart MySQL service after config change
+  service:
+    name: mysql
+    state: restarted
+  when: custom_config_result.changed
+- name: Stop existing replica processes
+  mysql_replication:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    mode: stopreplica
+- name: Reset slave completely
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    query: "RESET SLAVE;"
+#- name: Retrieve current master status
+#  command: >-
+#    mysql -h {{ mysql_master_host }} -u root -p{{ mysql_root_password }} -e 'SHOW MASTER STATUS\G'
+#  register: master_status
+#  changed_when: False
+
+- name: Check variables on slave
+  debug:
+    msg: "MASTER_LOG_FILE: {{ hostvars[mysql_master_name]['mysql_master_facts']['stdout'].split('\n')[0].split('=')[1] }}, MASTER_LOG_POS: {{ hostvars[mysql_master_name]['mysql_master_facts']['stdout'].split('\n')[1].split('=')[1] }}"
+  when: "'db' in group_names"
+- name: Split stdout into separate lines
+  set_fact:
+    mysql_master_output: "{{ hostvars[mysql_master_name]['mysql_master_facts']['stdout'].split('\n') }}"
+- name: Extract MASTER_LOG_FILE from first line
+  set_fact:
+    master_log_file: "{{ mysql_master_output[0].split('=')[1] }}"
+- name: Extract MASTER_LOG_POS from second line
+  set_fact:
+    master_log_pos: "{{ mysql_master_output[1].split('=')[1] }}"
+# Опционально: Отладка извлечённых значений
+- name: Debug extracted values
+  debug:
+    msg: "MASTER_LOG_FILE: {{ master_log_file }}, MASTER_LOG_POS: {{ master_log_pos }}"
+
+
+- name: Debug master status
+  debug:
+    msg: "MASTER_LOG_FILE: {{ master_log_file }}, MASTER_LOG_POS: {{ master_log_position }}"
+- name: Change master settings on slave
+  mysql_replication:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    mode: changemaster
+    master_host: "{{ mysql_master_host }}"
+    master_port: "{{ mysql_master_port }}"
+    master_user: "{{ mysql_replication_user }}"
+    master_password: "{{ mysql_replication_password }}"
+    master_log_file: "{{ master_log_file }}"
+    master_log_pos: "{{ master_log_position }}"
+- name: Start slave replication process
+  mysql_replication:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    mode: startreplica
+...

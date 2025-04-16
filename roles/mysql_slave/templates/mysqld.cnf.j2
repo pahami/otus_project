@@ -1,0 +1,12 @@
+[mysqld]
+server-id               = 2
+log_bin                 = /var/log/mysql/mysql-bin.log
+relay_log               = /var/log/mysql/mysql-relay-bin.log
+log_error               = /var/log/mysql/error.log
+bind-address		    = 127.0.0.1
+mysqlx-bind-address     = 127.0.0.1
+myisam-recover-options  = BACKUP
+read-only = ON
+gtid-mode=ON
+enforce-gtid-consistency
+log-replica-updates

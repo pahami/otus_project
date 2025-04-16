@@ -1,0 +1,108 @@
+---
+# Обновляемся
+- name: Update and upgrade apt packages
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+    upgrade: safe
+# Настраиваем время
+- name: Set timezone to Europe/Moscow
+  community.general.timezone:
+    name: Europe/Moscow  
+# Устанавливаем начальный пакет
+- name: Install pkgs
+  apt:
+    name: "{{ common_pkgs }}"
+    state: present
+
+# Создаём пользователя и настраиваем подключение
+- name: Create group
+  ansible.builtin.group:
+    name: pvm
+    state: present
+
+- name: Add Users
+  ansible.builtin.user:
+    name: pvm
+    comment: "Privileged User"
+    group: pvm
+    groups: sudo
+    password: "{{ pvm_pass }}"
+    append: yes
+    shell: /bin/bash
+  no_log: true
+
+#- name: Use the pvm_pass
+#  ansible.builtin.debug:
+#    msg: "Show me {{ pvm_pass }}"
+
+# Настраиваем авторизаци по сертификату
+- name: Exist ssh directory
+  ansible.builtin.file:
+    path: "/home/pvm/.ssh"
+    state: directory
+    owner: pvm
+    group: pvm
+    mode: "0700"
+- name: Exist authorized_keys
+  ansible.builtin.file:
+    path: "/home/pvm/.ssh/authorized_keys"
+    state: touch
+    owner: pvm
+    group: pvm
+    mode: "0600"
+
+- name: Copy authorized_keys
+  ansible.builtin.copy:
+    content: "{{ lookup('file', '/home/pvm/otusproject/roles/common/files/pvm.pub') }}"
+    dest: "/home/pvm/.ssh/authorized_keys"
+    mode: "0600"
+
+- name: Delete sshd_config.d/
+  ansible.builtin.file:
+    path: "/etc/ssh/sshd_config.d/50-cloud-init.conf"
+    state: absent
+
+- name: Disable password auth in SSH
+  ansible.builtin.lineinfile:
+    path: "/etc/ssh/sshd_config"
+    regexp: '^(.*)PasswordAuthentication(.*)$'
+    line: 'PasswordAuthentication no'
+
+- name: Disable root auth in SSH
+  ansible.builtin.lineinfile:
+    path: "/etc/ssh/sshd_config"
+    regexp: '^(.*)PermitRootLogin(.*)$'
+    line: 'PermitRootLogin no'
+
+- name: Disable password auth in SSH
+  ansible.builtin.lineinfile:
+    path: "/etc/ssh/sshd_config"
+    regexp: '^(.*)PubkeyAuthentication(.*)$'
+    line: 'PubkeyAuthentication yes'
+
+- name: Restart SSH
+  ansible.builtin.service:
+    name: ssh
+    state: restarted
+
+# Создаём директорию и подключаем git
+- name: Create directory
+  ansible.builtin.file:
+    path: "{{ git_dir }}"
+    state: directory
+    mode: '0755'
+- name: Update ~/.ssh/config
+  ansible.builtin.blockinfile:
+    path: /etc/ssh/sshd_config
+    prepend_newline: true
+    block: |
+      Host github.com
+      HostName github.com
+      User git
+      IdentityFile ~/.ssh/pvm
+      IdentitiesOnly yes
+- name: Copy pvm_key
+  ansible.builtin.copy:
+    name: 
+...

@@ -1,0 +1,26 @@
+---
+#- name: Add Nginx official GPG key
+#  ansible.builtin.get_url:
+#    url: https://repo.zabbix.com/zabbix/7.2/release/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_7.2+ubuntu22.04_all.deb
+#    dest: "{{ zabbix_repo }}"
+    
+- name: Add Zabbix repository
+  ansible.builtin.apt_repository:
+    repo: "deb {{ zabbix_repo }} https://repo.zabbix.com/zabbix/7.2/release/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_7.2+ubuntu22.04_all.deb zabbix"
+    state: present
+  notify: Update apt cache
+    
+- name: install nginx
+  ansible.builtin.apt:
+    pkg: "{{ zabbix_pkgs }}"
+    state: present
+- name: Copy borg.pub to srv
+  ansible.builtin.shell: |
+    mysql -uroot -p
+    1q2w3e4r
+    mysql> create database zabbix character set utf8mb4 collate utf8mb4_bin;
+    mysql> create user zabbix@localhost identified by '1q2w3e4r';
+    mysql> grant all privileges on zabbix.* to zabbix@localhost;
+    mysql> set global log_bin_trust_function_creators = 1;
+    mysql> quit;
+...
