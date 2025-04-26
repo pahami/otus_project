@@ -27,43 +27,24 @@
 
 ### Формат сдачи: 
 
-
-
-
-
-
 Развернем Vagrant-стенд:
-  - Создайте папку с проектом и зайдите в нее (например: /otus_backup):
+  - Создайте папку с проектом и зайдите в нее (например: /otus_project):
 ```
-mkdir -p otus_backup ; cd ./otus_backup
+mkdir -p otus_project ; cd ./otus_project
 ```
   - Клонируете проект с Github, набрав команду:
 ```
-apt update -y && apt install git -y ; git clone https://github.com/pahami/otus_backup.git
+apt update -y && apt install git -y ; git clone https://github.com/pahami/otus_project.git
 ```
-  - Запустите проект из папки, в которую склонировали проект (в нашем примере ./otus_backup):
+  - Запустите проект из папки, в которую склонировали проект (в нашем примере ./otus_project):
 
 ```
 vagrant up
 ```
 
-Для проверки можете попробовать подключиться к хосту по ssh
 
-```borg list borg@192.168.11.160:/var/backup/```
 
-<details>
-<summary> Результат </summary>
 
-```
-vagrant@client:~$ borg list borg@192.168.56.10:/var/backup/
-borg@192.168.56.10's password: 
-Enter passphrase for key ssh://borg@192.168.56.10/var/backup: 
-etc-2025-02-23_19:28:39              Sun, 2025-02-23 19:28:40 [4542de5de86caee43fc62d0919fb67f963eb29151dc6e1c2fd0d4cda56fae114]
-etc-2025-02-23_20:01:05              Sun, 2025-02-23 20:01:06 [f2ec4629ac31ffb52bc408b450140f56222a099b5dffe0c93dfa9717ca749ae7]
-```
-</details>
-
-Посмотреть логи:
 
 
 ```
