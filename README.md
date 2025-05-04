@@ -48,10 +48,12 @@ vagrant up
   - Создание и настройка сервиса с нуля
   - Восстановление уже настроенного сервиса
 
+Используются репозитории mirror.yandex
 vars зашифровано.
 
-Используемые параметры:
-
+<details>
+<summary> Используемые параметры: </summary>
+```
 # restore_monitoring
 zbx_pass - Zabbix пароль
 zabbix_pkgs:
@@ -70,7 +72,6 @@ glpi_db_host: "ip_mysql_master"
 glpi_db_port: "port_mysql_master"
 glpi_db_name: "name_db"
 glpi_db_user: "user_db"
-
 apache_port:
 srv_name: - site.net
 srv_root: /var/www/glpi
@@ -104,75 +105,50 @@ glpi2: #настройки хоста Apache2
   name:
   ip:
   port:
-
-
 # restore_logs
-elk_srv_ip: 192.168.103.216
-elk_pass: esZz9GmFBFhhDjrw6CBc
-elk_srv_name: Otussrv6
+elk_srv_ip: #ip сервера elasticsearch
+elk_pass: #пароль от пользователя elastic
+elk_srv_name: # имя сервера
 # restore_db
-mysql_replication_user: repl
-mysql_replication_password: OtusREPL-2025
-glpi_pass: OtusGLPI-2025
-mysql_root_password: OtusSQL-2025
-mysql_master_host: "192.168.103.213"
-mysql_master_port: "3306"
-mysql_master_name: Otussrv3
-mysql_slave_name: Otussrv4
+mysql_replication_user: #имя пользователя репликации
+mysql_replication_password: #пароль репликации
+glpi_pass: #пароль от польхователя glpi
+mysql_root_password: #пароль от sql root
+mysql_master_host: "ip host"
+mysql_master_port: "port host"
+mysql_master_name: # имя сервера mysql_master
+mysql_slave_name: # имя mysql_slave
+```
+</details>
+
 Для восстановления системы необходимо выполни запуск playbook c тэго ресторе:
 
 Nginx
-'''
-
-'''
+```
+ansible-playbook site.yml --vault-password-file=ans_vault -K -l nginx --tags restore
+```
 
 Apache
-'''
-
-'''
+```
+ansible-playbook site.yml --vault-password-file=ans_vault -K -l apache --tags restore
+```
 
 Mysql_master
-'''
-
-'''
+```
+ansible-playbook site.yml --vault-password-file=ans_vault -K -l db --tags restore
+```
 
 Mysql_slave
-'''
-
-'''
+```
+ansible-playbook site.yml --vault-password-file=ans_vault -K -l db --tags restore_slave
+```
 
 Monitoring
-'''
-
-'''
+```
+ansible-playbook site.yml --vault-password-file=ans_vault -K -l monitoring --tags restore_zabbix
+```
 
 Logs
-'''
-
-'''
-
-
-
-vagrant ssh srv
-ll /var/log/rsyslog/client/
 ```
-
-<details>
-<summary> Результат </summary>
-
+ansible-playbook site.yml --vault-password-file=ans_vault -K -l logs --tags start,restore_logs
 ```
-vagrant@srv:~$ ll /var/log/rsyslog/client/
-total 52
-drwxr-xr-x 2 syslog syslog  4096 Feb 23 19:32 ./
-drwxr-xr-x 4 syslog syslog  4096 Feb 23 19:28 ../
--rw-r----- 1 syslog adm      355 Feb 23 19:32 dbus-daemon.log
--rw-r----- 1 syslog adm     3179 Feb 23 19:28 python3.log
--rw-r----- 1 syslog adm      546 Feb 23 19:28 rsyslogd.log
--rw-r----- 1 syslog adm     1276 Feb 23 19:58 sshd.log
--rw-r----- 1 syslog adm    12232 Feb 23 20:07 sshpass.log
--rw-r----- 1 syslog adm     4776 Feb 23 19:28 sudo.log
--rw-r----- 1 syslog adm      567 Feb 23 19:58 systemd-logind.log
--rw-r----- 1 syslog adm     3730 Feb 23 20:07 systemd.log
-
-```
-</details>
